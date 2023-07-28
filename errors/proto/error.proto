@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package errors;
+
+option go_package = "github.com/frame-go/framego/errors/proto";
+
+import "google/protobuf/struct.proto";
+
+message Error {
+    string error = 1;
+    google.protobuf.Struct detail = 2;
+    Error cause = 3;
+}
