@@ -3,8 +3,8 @@ package ginex
 import (
 	"regexp"
 
+	"github.com/aurowora/compress"
 	"github.com/gin-gonic/gin"
-	compress "github.com/lf4096/gin-compress"
 
 	"github.com/frame-go/framego/config"
 	"github.com/frame-go/framego/log"
