@@ -21,6 +21,7 @@ import (
 	"github.com/frame-go/framego/log"
 )
 
+const MaxMsgSize = 10 * 1024 * 1024
 const ServerConnMaxIdle = time.Duration(math.MaxInt64)
 const ServerConnMaxAge = time.Duration(math.MaxInt64)
 const ServerConnMaxAgeGrace = time.Duration(math.MaxInt64)
@@ -49,6 +50,8 @@ func newGrpcServerWithChannel(tlsConfig *tls.Config, middlewares *middlewareAppl
 			MinTime:             KeepaliveMinTime,
 			PermitWithoutStream: true,
 		}),
+		grpc.MaxSendMsgSize(MaxMsgSize),
+		grpc.MaxRecvMsgSize(MaxMsgSize),
 	}
 	if tlsConfig != nil {
 		tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
@@ -82,6 +85,10 @@ func newGrpcClient(ctx context.Context, name string, endpoint string, tlsConfig 
 			Timeout:             KeepaliveTimeout,
 			PermitWithoutStream: true,
 		}),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallSendMsgSize(MaxMsgSize),
+			grpc.MaxCallRecvMsgSize(MaxMsgSize),
+		),
 	)
 	if err != nil {
 		log.Logger.Error().Err(err).Str("endpoint", endpoint).Msg("new_grpc_client_dial_error")
