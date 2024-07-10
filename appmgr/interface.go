@@ -12,6 +12,7 @@ import (
 
 	"github.com/frame-go/framego/client/cache"
 	"github.com/frame-go/framego/health"
+	"github.com/frame-go/framego/uniqueid"
 )
 
 type AppInfo struct {
@@ -61,6 +62,9 @@ type App interface {
 
 	// GetPulsarClient gets Pulsar client by name
 	GetPulsarClient(string) pulsar.Client
+
+	// GetIDGenerator gets uniqueid Generator
+	GetIDGenerator() uniqueid.Generator
 }
 
 type Service interface {

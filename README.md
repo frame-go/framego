@@ -277,6 +277,9 @@ app:
       - name: sample
         url: "pulsar://127.0.0.1:6650"
         token: "zFbeuKF3jqjfxkQFfOoMeQ"
+  id_generator:
+    service_id: 1
+    key: "c2b4706d47bbddfd6729cb72960c1a3d"
 ```
 
 A project is an app, it can has many GRPC/HTTP services under an app, and an optionalobservable service for debug, monitoring, etc. Services are listen on different ports.
@@ -327,6 +330,9 @@ Below are configuration items under `app`.
 | pulsars[].name                       | Name of pulsar server to fetch the client interface                                                                         | `iam`                                 |
 | pulsars[].url                        | URL of pulsar server                                                                                                        | `pulsar://10.0.0.1:6650`              |
 | pulsars[].token                      | Token for pulsar auth, optional                                                                                             | `eyJhbGciOiJU...`                     |
+| id_generator                         | ID generatior configuration, optional.                                                                                      |                                       |
+| id_generator.service_id              | Service ID for unique ID generator.                                                                                         | `1`                                   |
+| id_generator.key                     | Encrypt key for unique ID generator, 16 bytes, hex encoded.                                                                 | `c2b4706d47bbddfd6729cb72960c1a3d`    |
 
 ### Observable Service Modules
 

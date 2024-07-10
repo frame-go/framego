@@ -2,6 +2,7 @@ package appmgr
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/signal"
@@ -22,7 +23,7 @@ import (
 	"github.com/frame-go/framego/config"
 	"github.com/frame-go/framego/errors"
 	"github.com/frame-go/framego/log"
-	"github.com/frame-go/framego/utils"
+	"github.com/frame-go/framego/uniqueid"
 )
 
 type appImpl struct {
@@ -41,12 +42,11 @@ type appImpl struct {
 	databases   database.ClientManager
 	caches      cache.ClientManager
 	pulsars     pulsarclient.ClientManager
+	idGenerator uniqueid.Generator
 }
 
 // Init initializes application by config
 func (a *appImpl) Init() {
-	utils.InitRand()
-
 	_ = a.cmd.Execute()
 	if !a.initOK.Load() {
 		os.Exit(0)
@@ -101,6 +101,21 @@ func (a *appImpl) Init() {
 		log.Logger.Error().Err(err).Msg("init_pulsars_error")
 		exitWithError("Init Pulsars Error", err)
 		return
+	}
+
+	if a.config.IDGenerator.Key != "" {
+		idGeneratorKey, err := hex.DecodeString(a.config.IDGenerator.Key)
+		if err != nil {
+			log.Logger.Error().Err(err).Str("key", a.config.IDGenerator.Key).Msg("parse_id_encrypt_key_error")
+			exitWithError("Parse ID Encrypt Key Error", err)
+			return
+		}
+		a.idGenerator, err = uniqueid.NewGeneratorFromHostName(idGeneratorKey, a.config.IDGenerator.ServiceID, viper.GetBool("debug"))
+		if err != nil {
+			log.Logger.Error().Err(err).Msg("init_id_generator_error")
+			exitWithError("Init ID Generator Error", err)
+			return
+		}
 	}
 
 	initGin(a.config.Name)
@@ -162,6 +177,10 @@ func (a *appImpl) GetDatabaseSqlxClient(name string) *mssqlx.DBs {
 
 func (a *appImpl) GetPulsarClient(name string) pulsar.Client {
 	return a.pulsars.GetClient(name)
+}
+
+func (a *appImpl) GetIDGenerator() uniqueid.Generator {
+	return a.idGenerator
 }
 
 func (a *appImpl) Run() (err error) {

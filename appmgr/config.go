@@ -55,15 +55,21 @@ type ClientsConfig struct {
 	Grpc GrpcConfig `json:"grpc" mapstructure:"grpc"`
 }
 
+type IDGeneratorConfig struct {
+	ServiceID int    `json:"service_id" mapstructure:"service_id"`
+	Key       string `json:"key" mapstructure:"key"`
+}
+
 type AppConfig struct {
-	Name       string            `json:"name" mapstructure:"name"`
-	Observable ObservableConfig  `json:"observable" mapstructure:"observable"`
-	Services   []ServiceConfig   `json:"services" mapstructure:"services"`
-	Jobs       []string          `json:"jobs" mapstructure:"jobs"`
-	Clients    ClientsConfig     `json:"clients" mapstructure:"clients"`
-	Databases  []database.Config `json:"databases" mapstructure:"databases"`
-	Caches     []cache.Config    `json:"caches" mapstructure:"caches"`
-	Pulsars    []pulsar.Config   `json:"pulsar" mapstructure:"pulsars"`
+	Name        string            `json:"name" mapstructure:"name"`
+	Observable  ObservableConfig  `json:"observable" mapstructure:"observable"`
+	Services    []ServiceConfig   `json:"services" mapstructure:"services"`
+	Jobs        []string          `json:"jobs" mapstructure:"jobs"`
+	Clients     ClientsConfig     `json:"clients" mapstructure:"clients"`
+	Databases   []database.Config `json:"databases" mapstructure:"databases"`
+	Caches      []cache.Config    `json:"caches" mapstructure:"caches"`
+	Pulsars     []pulsar.Config   `json:"pulsar" mapstructure:"pulsars"`
+	IDGenerator IDGeneratorConfig `json:"id_generator" mapstructure:"id_generator"`
 }
 
 func (c *GrpcSecurityConfig) Resolve() {

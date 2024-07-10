@@ -53,7 +53,7 @@ github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 h1:/vQbFIOMb
 github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4/go.mod h1:hN7oaIRCjzsZ2dE+yG5k+rsdt3qcwykqK6HVGcKwsw4=
 github.com/99designs/keyring v1.2.2 h1:pZd3neh/EmUzWONb35LxQfvuY7kiSXAq3HQd97+XBn0=
 github.com/99designs/keyring v1.2.2/go.mod h1:wes/FrByc8j7lFOAGLGSNEg8f/PaI3cgTBqhFkHUrPk=
-`github.com/AthenZ/athenz v1.11.56 h1:Pd+PKI32SsrfiXwDCtYm8YfZXeGbRX0B5U624JOd97o=
+github.com/AthenZ/athenz v1.11.56 h1:Pd+PKI32SsrfiXwDCtYm8YfZXeGbRX0B5U624JOd97o=
 github.com/AthenZ/athenz v1.11.56/go.mod h1:4EKDZc6esPVHpBHXsT1OqaUnBABn3qTKgAm8L1QE2Vc=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
