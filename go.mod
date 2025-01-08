@@ -7,7 +7,7 @@ require (
 	github.com/aurowora/compress v0.0.0-20230724224640-6512772d482f
 	github.com/casbin/casbin/v2 v2.87.1
 	github.com/fullstorydev/grpchan v1.1.1
-	github.com/fullstorydev/grpcui v1.5.0
+	github.com/fullstorydev/grpcui v1.4.2
 	github.com/gin-contrib/cors v1.7.1
 	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-gonic/gin v1.9.1
@@ -39,9 +39,9 @@ require (
 	github.com/yalp/jsonpath v0.0.0-20180802001716-5cc68e5049a0
 	github.com/zsais/go-gin-prometheus v0.1.0
 	go.uber.org/atomic v1.11.0
-	golang.org/x/crypto v0.22.0
+	golang.org/x/crypto v0.29.0
 	google.golang.org/grpc v1.63.2
-	google.golang.org/protobuf v1.33.1-0.20240408130810-98873a205002
+	google.golang.org/protobuf v1.34.2
 	gorm.io/driver/mysql v1.5.6
 	gorm.io/gorm v1.25.9
 	gorm.io/plugin/dbresolver v1.5.1
@@ -82,7 +82,7 @@ require (
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/fullstorydev/grpcurl v1.9.1 // indirect
+	github.com/fullstorydev/grpcurl v1.9.2 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-chi/chi/v5 v5.0.12 // indirect
@@ -172,14 +172,14 @@ require (
 	golang.org/x/arch v0.7.0 // indirect
 	golang.org/x/exp v0.0.0-20240409090435-93d18d7e34b8 // indirect
 	golang.org/x/mod v0.17.0 // indirect
-	golang.org/x/net v0.24.0 // indirect
+	golang.org/x/net v0.31.0 // indirect
 	golang.org/x/oauth2 v0.19.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
-	golang.org/x/term v0.19.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/sync v0.9.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
+	golang.org/x/term v0.26.0 // indirect
+	golang.org/x/text v0.20.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.20.0 // indirect
+	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	google.golang.org/api v0.172.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20240401170217-c3f982113cda // indirect
