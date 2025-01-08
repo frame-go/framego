@@ -42,9 +42,9 @@ require (
 	golang.org/x/crypto v0.29.0
 	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.34.2
-	gorm.io/driver/mysql v1.5.6
-	gorm.io/gorm v1.25.9
-	gorm.io/plugin/dbresolver v1.5.1
+	gorm.io/driver/mysql v1.5.7
+	gorm.io/gorm v1.25.12
+	gorm.io/plugin/dbresolver v1.5.3
 )
 
 require (
