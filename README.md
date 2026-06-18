@@ -367,3 +367,7 @@ Below are built-in middlewares for gRPC/HTTP client/service:
 ### errors
 
 `fromego/errors` module provides useful utilities for error handling, and is compatible with errors module in standard library. Refer to [errors document](./docs/errors.md) for details.
+
+### uniqueid
+
+`framego/uniqueid` generates and converts 64-bit unique IDs (Snowflake-derived, XTEA-encrypted), stored as `uint64` and exposed as 16-char hex strings. Refer to [uniqueid document](./docs/uniqueid.md) for details.

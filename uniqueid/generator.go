@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/xtea"
 )
 
+// Generator mints new unique IDs.
 type Generator interface {
 	NewID() ID
 }
@@ -38,6 +39,7 @@ type generatorImpl struct {
 	nodeShift uint8
 }
 
+// NewGenerator creates an ID generator from a secret key and an explicit node id (0..4095).
 func NewGenerator(key []byte, nodeID int) (Generator, error) {
 	nodeMax := -1 ^ (-1 << nodeBits)
 	if nodeID < 0 || nodeID > nodeMax {
@@ -57,6 +59,8 @@ func NewGenerator(key []byte, nodeID int) (Generator, error) {
 	return g, nil
 }
 
+// NewGeneratorFromHostName derives the node id from serviceID plus the instance index parsed from the
+// hostname's trailing "-<n>" suffix; pass debug=true to skip the hostname lookup and use index 0.
 func NewGeneratorFromHostName(key []byte, serviceID int, debug bool) (Generator, error) {
 	serviceIDMax := -1 ^ (-1 << (nodeBits - instanceIndexBits))
 	if serviceID < 0 || serviceID > serviceIDMax {
@@ -88,6 +92,7 @@ func NewGeneratorFromHostName(key []byte, serviceID int, debug bool) (Generator,
 	return NewGenerator(key, nodeID)
 }
 
+// NewID returns a new unique ID.
 func (g *generatorImpl) NewID() ID {
 	g.lock.Lock()
 	defer g.lock.Unlock()
@@ -103,6 +108,7 @@ func (g *generatorImpl) NewID() ID {
 	}
 }
 
+// snowflakeID composes the next raw Snowflake value from timestamp, node id, and step counter.
 func (g *generatorImpl) snowflakeID() uint64 {
 	now := uint64(time.Now().UnixMilli()) - epoch
 	if now <= g.lastTime {
