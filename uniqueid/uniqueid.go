@@ -1,6 +1,7 @@
 package uniqueid
 
 import (
+	"database/sql/driver"
 	"fmt"
 	"strconv"
 )
@@ -44,4 +45,33 @@ func (h ID) StringOrEmpty() string {
 // Uint64 returns the id as a plain uint64.
 func (h ID) Uint64() uint64 {
 	return uint64(h)
+}
+
+// Scan implements sql.Scanner. Ids are stored in signed bigint columns via
+// two's-complement bit-cast, so negative values map back to the upper uint64 range.
+func (h *ID) Scan(src any) error {
+	switch v := src.(type) {
+	case nil:
+		*h = 0
+	case int64:
+		*h = ID(v)
+	case uint64:
+		*h = ID(v)
+	case []byte:
+		parsed, err := strconv.ParseInt(string(v), 10, 64)
+		if err != nil {
+			return fmt.Errorf("uniqueid: scan %q: %w", v, err)
+		}
+		*h = ID(parsed)
+	default:
+		return fmt.Errorf("uniqueid: unsupported scan type %T", src)
+	}
+	return nil
+}
+
+// Value implements driver.Valuer, returning the raw uint64 so the driver layer picks
+// the representation: postgres bit-casts to bigint via the framego codec, mysql binds
+// unsigned natively. Returning int64 here would break BIGINT UNSIGNED columns on mysql.
+func (h ID) Value() (driver.Value, error) {
+	return uint64(h), nil
 }
