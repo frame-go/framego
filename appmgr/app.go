@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	"github.com/apache/pulsar-client-go/pulsar"
-	"github.com/linxGnu/mssqlx"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/atomic"
@@ -169,10 +168,6 @@ func (a *appImpl) GetDatabaseClient(name string) *gorm.DB {
 
 func (a *appImpl) GetCacheClient(name string) cache.Client {
 	return a.caches.GetClient(name)
-}
-
-func (a *appImpl) GetDatabaseSqlxClient(name string) *mssqlx.DBs {
-	return a.databases.GetSqlxClient(name)
 }
 
 func (a *appImpl) GetPulsarClient(name string) pulsar.Client {

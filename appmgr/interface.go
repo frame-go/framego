@@ -6,7 +6,6 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/gin-gonic/gin"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/linxGnu/mssqlx"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 
@@ -54,9 +53,6 @@ type App interface {
 	// GetDatabaseClient gets database gorm client by name
 	GetDatabaseClient(string) *gorm.DB
 
-	// GetDatabaseSqlxClient gets database mssqlx client by name
-	GetDatabaseSqlxClient(string) *mssqlx.DBs
-
 	// GetCacheClient gets cache client by name
 	GetCacheClient(string) cache.Client
 
@@ -95,7 +91,6 @@ type ClientManager interface {
 
 type DatabaseManager interface {
 	GetDatabaseClient(string) *gorm.DB
-	GetDatabaseSqlxClient(string) *mssqlx.DBs
 }
 
 type Middleware interface {
