@@ -161,7 +161,7 @@ func (m StringMap) GetStruct(path string, value interface{}) error {
 
 // GetStructWithValidation returns a struct value of config by path with validation
 func (m StringMap) GetStructWithValidation(path string, value interface{}) error {
-	err := GetStruct(path, value)
+	err := m.GetStruct(path, value)
 	if err != nil {
 		return err
 	}
