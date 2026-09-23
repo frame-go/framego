@@ -58,7 +58,7 @@ func newService(ctx context.Context, app App, mm *middlewareManager, config *Ser
 		s.httpEndpoint = config.Endpoints.Http
 		s.ginEngine = newGinEngin(s.middlewares)
 		if config.Endpoints.Grpc != "" {
-			s.grpcHttpMux = newGrpcHttpMux()
+			s.grpcHttpMux = newGrpcHttpMux(EventStreamHeartbeatInterval)
 			s.ginEngine.NoRoute(func(c *gin.Context) {
 				c.Status(http.StatusOK) // NoRoute handlers will be set to NotFound status by default, here reset to OK.
 				s.grpcHttpMux.ServeHTTP(c.Writer, c.Request)

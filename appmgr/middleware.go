@@ -64,6 +64,9 @@ func (m *middlewareManager) Apply(service Service, configs []interface{}) *middl
 				Int("index", i).Msg("create_middleware_error")
 		}
 	}
+	if service != nil {
+		ma.AddMiddleware("", NewEventStreamMiddleware(), nil)
+	}
 	return ma
 }
 
@@ -222,6 +225,26 @@ func serviceContextStreamServerInterceptor(service Service) grpc.StreamServerInt
 }
 
 func (m *serviceContextMiddleware) GrpcClientInterceptor(options map[string]interface{}) (grpc.UnaryClientInterceptor, grpc.StreamClientInterceptor) {
+	return nil, nil
+}
+
+type eventStreamMiddleware struct {
+	Middleware
+}
+
+func NewEventStreamMiddleware() Middleware {
+	return &eventStreamMiddleware{}
+}
+
+func (m *eventStreamMiddleware) GinHandler(options map[string]interface{}) gin.HandlerFunc {
+	return nil
+}
+
+func (m *eventStreamMiddleware) GrpcServerInterceptor(options map[string]interface{}) (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
+	return nil, grpcex.EventStreamServerInterceptor()
+}
+
+func (m *eventStreamMiddleware) GrpcClientInterceptor(options map[string]interface{}) (grpc.UnaryClientInterceptor, grpc.StreamClientInterceptor) {
 	return nil, nil
 }
 

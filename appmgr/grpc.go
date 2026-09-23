@@ -28,6 +28,7 @@ const ServerConnMaxAgeGrace = time.Duration(math.MaxInt64)
 const KeepaliveMinTime = 10 * time.Second
 const KeepaliveTime = 1 * time.Minute
 const KeepaliveTimeout = 20 * time.Second
+const EventStreamHeartbeatInterval = 15 * time.Second
 
 func initGrpc() {
 	grpcex.SetZeroLogger()
@@ -97,18 +98,22 @@ func newGrpcClient(ctx context.Context, name string, endpoint string, tlsConfig 
 	return conn
 }
 
-func newGrpcHttpMux() *runtime.ServeMux {
+func newGrpcHttpMux(heartbeatInterval time.Duration) *runtime.ServeMux {
+	marshaler := &runtime.JSONPb{
+		MarshalOptions: protojson.MarshalOptions{
+			UseProtoNames:   true,
+			UseEnumNumbers:  true,
+			EmitUnpopulated: true,
+		},
+		UnmarshalOptions: protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		},
+	}
 	return runtime.NewServeMux(
-		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
-			MarshalOptions: protojson.MarshalOptions{
-				UseProtoNames:   true,
-				UseEnumNumbers:  true,
-				EmitUnpopulated: true,
-			},
-			UnmarshalOptions: protojson.UnmarshalOptions{
-				DiscardUnknown: true,
-			},
-		}),
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, marshaler),
+		runtime.WithMarshalerOption(grpcex.MIMEEventStream, &grpcex.EventStreamMarshaler{Marshaler: marshaler}),
+		runtime.WithMiddlewares(grpcex.EventStreamGatewayMiddleware(heartbeatInterval)),
+		runtime.WithForwardResponseOption(grpcex.EventStreamForwardResponseOption),
 		runtime.WithIncomingHeaderMatcher(grpcex.DefaultHeaderMatcher),
 	)
 }
