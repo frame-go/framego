@@ -3,9 +3,9 @@ package grpcex
 import (
 	"testing"
 
-	casbin "github.com/casbin/casbin/v2"
-	"github.com/casbin/casbin/v2/model"
-	stringadapter "github.com/casbin/casbin/v2/persist/string-adapter"
+	casbin "github.com/casbin/casbin/v3"
+	"github.com/casbin/casbin/v3/model"
+	stringadapter "github.com/casbin/casbin/v3/persist/string-adapter"
 )
 
 const testPolicy = `

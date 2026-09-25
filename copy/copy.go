@@ -9,8 +9,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pquerna/ffjson/ffjson"
-	sMsgpack "github.com/shamaton/msgpack"
-	"github.com/vmihailenco/msgpack"
+	"github.com/vmihailenco/msgpack/v5"
 
 	"github.com/frame-go/framego/errors"
 	"github.com/frame-go/framego/pool"
@@ -154,23 +153,6 @@ func ffjsonDeepCopy(dst interface{}, src interface{}) error {
 		return errors.Wrap(err, errorEncoding)
 	}
 	if err := ffjson.Unmarshal(encodedBytes, dst); err != nil {
-		return errors.Wrap(err, errorDecoding)
-	}
-
-	return nil
-}
-
-// shamaton/msgpack deep copy
-func shamatonMsgpackDeepCopy(dst interface{}, src interface{}) error {
-	if dst == nil || src == nil {
-		return errors.New(errorNilPointer)
-	}
-
-	encodedBytes, err := sMsgpack.Encode(src)
-	if err != nil {
-		return errors.Wrap(err, errorEncoding)
-	}
-	if err := sMsgpack.Decode(encodedBytes, dst); err != nil {
 		return errors.Wrap(err, errorDecoding)
 	}
 

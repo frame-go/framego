@@ -23,9 +23,12 @@ Ensure you have installed and properly configured these tools in Shell before in
 - curl
 - git
 - go
+- make
 - cookiecutter
 - buf
 - air (optional)
+
+On Windows, run the make commands from Git Bash, since the Makefile recipes need a POSIX shell.
 
 #### Git
 
@@ -85,9 +88,10 @@ You will need to provide the following template variables:
 | app_name             | App name, in `snake_case` format. <br>This name will be used as an app name.                                                                                                           | `security_core`                         |
 | app_package_name     | App package name, in `flatcase`. <br>This name will be used as project root cmd package name and binary name. <br>Suggest aligning with app name, using a single word or abbreviation. | `securitycore`                          |
 | service_name         | Service name, in `snake_case` format. <br>This name will be used as service name, DB name.                                                                                             | `security_core`                         |
-| service_package_name | Sedervice package name, in `flatcase`. <br>This name will be used as the api package name. <br>Suggest aligning with service name, using a single word or abbreviation.                | `securitycore`                          |
+| service_package_name | Service package name, in `flatcase`. <br>This name will be used as the api package name. <br>Suggest aligning with service name, using a single word or abbreviation.                  | `securitycore`                          |
+| api_path_prefix      | HTTP path prefix shared by all RPC routes. <br>Choices: `/api/v1` (default), `/{app_package_name}/v1`.                                                                                 | `/api/v1`                               |
 | go_module            | Full go module path. <br>Suggest to end with project name.                                                                                                                             | `github.com/example/demo-server`        |
-| go_version           | Golang version, will be used in makefile and CI.                                                                                                                                       | `1.16`                                  |
+| go_version           | Go version, used in go.mod, Makefile and Dockerfile.                                                                                                                                   | `1.27`                                  |
 
 ### Initialize Project
 
@@ -107,26 +111,30 @@ make
 
 ### Setup DB
 
-Ensure you have MySQL/MariaDB installed and running locally.
+Ensure you have PostgreSQL installed and running locally.
 
-Run this command inside the project folder to create a sample DB and tables and grant permission to the test user:
+Run these commands inside the project folder to create the role and database that `configs/debug/config.yaml` points to, and then the tables. The first command connects as the `postgres` superuser:
 
 ```bash
-mysql < db/*.sql
-mysql -v -e "CREATE USER 'test'@'127.0.0.1' IDENTIFIED BY 'password'; GRANT ALL ON *.* TO 'test'@'127.0.0.1';"
+sudo -u postgres psql -c "CREATE ROLE {{service_name}} LOGIN PASSWORD 'password'" -c "CREATE DATABASE {{service_name}}_db OWNER {{service_name}} ENCODING 'UTF8'"
+PGPASSWORD=password psql -h 127.0.0.1 -U {{service_name}} -d {{service_name}}_db -f db/{{service_name}}_db.sql
 ```
 
-You can change the DB connection config inside `configs/debug/config.yaml`.
+You can change the DB connection config inside `configs/debug/config.yaml`. MySQL is also supported: set `type: mysql` and the MySQL address there, and rewrite the table SQL in `db/` in MySQL syntax.
 
 ### Run Project
 
-You can run the air command inside the project folder to run your project in live reload mode:
+Run this command inside the project folder to build and run your project with the debug configuration:
 
 ```bash
-air
+make run
 ```
 
-Or you can simply run the compiled executable inside the bin folder.
+Or run it in live reload mode with air:
+
+```bash
+make dev
+```
 
 ### Make Commands
 
@@ -135,16 +143,19 @@ The template provides many useful commands by makefile. You can run make command
 | Command               | Description                                                                                                        |
 |-----------------------|--------------------------------------------------------------------------------------------------------------------|
 | make init             | Initialize project and install tools.                                                                              |
-| make / make all       | Generate code and compile project. <br>Equal to `make fmt && make generate && make build`.                         |
+| make / make all       | Generate code and compile project. <br>Equal to `make generate && make fmt && make build`.                         |
 | make build            | Compile project.                                                                                                   |
+| make run              | Compile project and run it with `configs/debug/config.yaml`.                                                       |
+| make dev              | Run project in live reload mode with air.                                                                          |
 | make clean            | Clear compiled files.                                                                                              |
 | make go-generate      | Run go generate to generate go code.                                                                               |
 | make buf-generate     | Run buf generate to generate code from protobuf files and export dependencies protobuf files to buf_vendor folder. |
 | make generate         | Equal to make buf-generate && make go-generate .                                                                   |
 | make fmt              | Run go fmt and go vet format and check go code.                                                                    |
+| make test             | Run go test for all packages.                                                                                      |
 | make go-lint          | Run golangci-lint analysis go code.                                                                                |
 | make buf-lint         | Run buf lint to analysis protobuf code.                                                                            |
-| make lint             | Run all static code analysis. Equal to make fmt && make go-lint && make buf-lint .                                 |
+| make lint             | Run all static code analysis. Equal to make buf-lint && make fmt && make go-lint .                                 |
 | make check-go-version | Check whether golang version matches requirement.                                                                  |
 
 ## Project Structure
@@ -160,17 +171,15 @@ Root folder name: `{{project_name}}`
 | buf_vendor                                                  | Protobuf dependencies.                                                                                                                                                                                                                             |
 | configs                                                     | Local configuration files                                                                                                                                                                                                                          |
 | configs/debug/config.yaml                                   | Default configuration files for debug                                                                                                                                                                                                              |
-| db                                                          | Database creation and migrations sql files.                                                                                                                                                                                                        |
-| docs                                                        | Documents for the project.                                                                                                                                                                                                                         |
+| db                                                          | PostgreSQL table creation and migration SQL files.                                                                                                                                                                                                 |
 | internal                                                    | Private application and library code. <br>This is the code you don't want others importing in their applications or libraries.                                                                                                                     |
 | internal/models                                             | Data models definitions for Data Access layer. <br>The models can be used by db, cache and domain package.                                                                                                                                         |
 | internal/db                                                 | Database data access layer. CRUD for database.                                                                                                                                                                                                     |
 | internal/cache                                              | Cache data access layer. CRUD for in memory cache and distributed cache.                                                                                                                                                                           |
 | internal/domain                                             | Business logic layer. <br>This package contains major business logic, invokes code from db and cache packages, and provides functions for handlers.                                                                                                |
-| internal/handlers                                           | Presentation layer. API handlers for HTTP and GRPC interfaces. <br>This package should only contains data validation and conversion, and invokes code from domain package. This package should not invokes code from models, db or cache packages. |
-| tools                                                       | External tools used by project.                                                                                                                                                                                                                    |
-| tools.go                                                    | Dummy go file to include external tool dependencies.                                                                                                                                                                                               |
-| go.mod                                                      | Go module dependencies configuration.                                                                                                                                                                                                              |
+| internal/handlers                                           | Presentation layer. API handlers for HTTP and GRPC interfaces. <br>Handlers only call the domain package, log, and return the response. Requests are validated by middleware. <br>They should not invoke code from models, db or cache packages.   |
+| tools                                                       | golangci-lint, installed by `make init`. Ignored by git.                                                                                                                                                                                           |
+| go.mod                                                      | Go module dependencies, including the `tool` block for the protoc plugins.                                                                                                                                                                         |
 | Makefile                                                    | Make command configuration.                                                                                                                                                                                                                        |
 | .gitignore                                                  | Git ignore file configurations.                                                                                                                                                                                                                    |
 | .golangci.yaml                                              | Golangci-lint configurations.                                                                                                                                                                                                                      |
@@ -262,21 +271,29 @@ app:
             key: ./keys/service.pem
             cert: ./keys/service.crt
             ca: ./keys/ca.crt
-    databases:
-      - name: sample
-        database: "sample_db"
-        user: "root"
-        password: ""
-        masters: ["127.0.0.1:3306"]
-        slaves: []
-    caches:
-      - name: sample
-        type: redis
-        address: "127.0.0.1:6379"
-    pulsars:
-      - name: sample
-        url: "pulsar://127.0.0.1:6650"
-        token: "zFbeuKF3jqjfxkQFfOoMeQ"
+  databases:
+    - name: sample
+      type: mysql
+      database: "sample_db"
+      user: "root"
+      password: ""
+      masters: ["127.0.0.1:3306"]
+      slaves: []
+    - name: sample_postgres
+      type: postgres
+      database: "sample_db"
+      user: "sample"
+      password: "password"
+      masters: ["127.0.0.1:5432"]
+      slaves: []
+  caches:
+    - name: sample
+      type: redis
+      address: "127.0.0.1:6379"
+  pulsars:
+    - name: sample
+      url: "pulsar://127.0.0.1:6650"
+      token: "zFbeuKF3jqjfxkQFfOoMeQ"
   id_generator:
     service_id: 1
     key: "c2b4706d47bbddfd6729cb72960c1a3d"
@@ -314,6 +331,7 @@ Below are configuration items under `app`.
 | clients.grpc.servers[].security.ca   | TLS CA for verifying server certificates.                                                                                   | `./key/ca.crt`                        |
 | databases                            | Databases used by app.                                                                                                      |                                       |
 | databases[].name                     | Name of database to fetch the client interface.                                                                             | `iam`                                 |
+| databases[].type                     | Database type. <br>Choices: `mysql` (default), `postgres`.                                                                  | `postgres`                            |
 | databases[].database                 | Database schema name.                                                                                                       | `iam_db`                              |
 | databases[].user                     | Database user name.                                                                                                         | `test_user`                           |
 | databases[].password                 | Database passwrod.                                                                                                          | `testpass`                            |

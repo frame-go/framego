@@ -50,7 +50,6 @@ var copyFuncs = []copyFunc{
 	MsgpackDeepCopy,
 	JsoniterDeepCopy,
 	ffjsonDeepCopy,
-	shamatonMsgpackDeepCopy,
 }
 
 var categoryList []*CategoryBrief
@@ -361,14 +360,6 @@ func BenchmarkFfjsonDeepCopyFakeData(b *testing.B) {
 
 func BenchmarkFfjsonDeepCopyRealData(b *testing.B) {
 	benchmarkDeepCopyRealData(ffjsonDeepCopy, b.N)
-}
-
-func BenchmarkShamatonMsgpackDeepCopyFakeData(b *testing.B) {
-	benchmarkDeepCopyFakeData(shamatonMsgpackDeepCopy, b.N)
-}
-
-func BenchmarkShamatonMsgpackDeepCopyRealData(b *testing.B) {
-	benchmarkDeepCopyRealData(shamatonMsgpackDeepCopy, b.N)
 }
 
 func TestMain(m *testing.M) {
