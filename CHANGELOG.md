@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Enable GORM error translation in the database client (`TranslateError`)
+
 ## 0.4.0 - 2026-09-25
 
 - Require Go 1.27 and upgrade dependencies

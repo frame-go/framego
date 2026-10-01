@@ -43,6 +43,7 @@ func (c *GormClient) init(config *Config, opts ...Option) error {
 		&gorm.Config{
 			DisableAutomaticPing: true,
 			Logger:               logger,
+			TranslateError:       true,
 		})
 	if err != nil {
 		return err
