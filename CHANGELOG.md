@@ -1,8 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.4.1 - 2026-10-03
 
 - Enable GORM error translation in the database client (`TranslateError`)
+- Pass `set-cookie` gRPC response metadata through the gateway as the `Set-Cookie` header (`grpcex.DefaultOutgoingHeaderMatcher`)
+- Add `grpcex.SetCookie` and `grpcex.GetCookie` for response and request cookies
+- Migrate the golangci-lint config to v2
 
 ## 0.4.0 - 2026-09-25
 

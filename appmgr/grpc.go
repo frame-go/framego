@@ -115,6 +115,7 @@ func newGrpcHttpMux(heartbeatInterval time.Duration) *runtime.ServeMux {
 		runtime.WithMiddlewares(grpcex.EventStreamGatewayMiddleware(heartbeatInterval)),
 		runtime.WithForwardResponseOption(grpcex.EventStreamForwardResponseOption),
 		runtime.WithIncomingHeaderMatcher(grpcex.DefaultHeaderMatcher),
+		runtime.WithOutgoingHeaderMatcher(grpcex.DefaultOutgoingHeaderMatcher),
 	)
 }
 
