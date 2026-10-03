@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	nethttp "net/http"
 	neturl "net/url"
@@ -110,12 +109,12 @@ func isPublicField(fieldType reflect.StructField) bool {
 func setFormValue(form *neturl.Values, key string, value interface{}) {
 	obj := reflect.ValueOf(value)
 	switch obj.Kind() {
-	case reflect.Ptr:
+	case reflect.Pointer:
 		form.Set(key, fmt.Sprintf("%v", obj.Elem()))
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < obj.Len(); i++ {
 			item := obj.Index(i)
-			if item.Kind() == reflect.Ptr {
+			if item.Kind() == reflect.Pointer {
 				form.Add(key, fmt.Sprintf("%v", item.Elem()))
 			} else {
 				form.Add(key, fmt.Sprintf("%v", item))
@@ -133,7 +132,7 @@ type headerSetter interface {
 func setHeader(headerSetter headerSetter, value interface{}, key string) (err error) {
 	obj := reflect.ValueOf(value)
 	switch obj.Kind() {
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if obj.Elem().Kind() != reflect.Struct {
 			return setHeader(headerSetter, obj.Elem(), key)
 		}
@@ -210,7 +209,7 @@ func getBodyReaderAndForm(format requestDataFormat, data interface{}) (io.Reader
 				// data is struct
 				form = &neturl.Values{}
 				obj := reflect.ValueOf(data)
-				if obj.Kind() == reflect.Ptr {
+				if obj.Kind() == reflect.Pointer {
 					obj = obj.Elem()
 				}
 				if obj.Kind() != reflect.Struct {
@@ -377,7 +376,7 @@ func (c *DefaultClient) RequestJSON(respData interface{}, method Method, url str
 		return nil
 	}
 	var body []byte
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

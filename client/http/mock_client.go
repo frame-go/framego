@@ -1,7 +1,7 @@
 package http
 
 import (
-	"io/ioutil"
+	"os"
 )
 
 // GetMockFileNameFunc returns a file name, of which contains mock data for test
@@ -15,7 +15,7 @@ type DefaultMockClient struct {
 // RequestJSON mocks RequestJSON in http but returns mock data
 func (hcm DefaultMockClient) RequestJSON(respData interface{}, method Method, url string, format requestDataFormat, data interface{}, headers ...*DataMap) (err error) {
 	mockDataFileName := hcm.getMockData(url, method, data)
-	file, _ := ioutil.ReadFile(mockDataFileName)
+	file, _ := os.ReadFile(mockDataFileName)
 	err = json.Unmarshal([]byte(file), respData)
 	return err
 }
