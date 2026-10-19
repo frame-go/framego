@@ -19,7 +19,8 @@ type corsConfig struct {
 	AllowOrigins []string `json:"allow_origins"`
 
 	// AllowMethods is a list of methods the client is allowed to use with
-	// cross-domain requests. Default value is simple methods (GET, POST, PUT, PATCH, DELETE, HEAD, and OPTIONS)
+	// cross-domain requests. Default value is [], which sends no Access-Control-Allow-Methods
+	// header, so browsers allow only simple methods (GET, HEAD and POST)
 	AllowMethods []string `json:"allow_methods"`
 
 	// AllowHeaders is list of non simple headers the client is allowed to use with
@@ -44,6 +45,9 @@ type corsConfig struct {
 	// Allows usage of popular browser extensions schemas
 	AllowBrowserExtensions bool `json:"allow_browser_extensions"`
 
+	// Allows to add custom schema like tauri://
+	CustomSchemas []string `json:"custom_schemas"`
+
 	// Allows usage of WebSocket protocol
 	AllowWebSockets bool `json:"allow_web_sockets"`
 }
@@ -66,6 +70,7 @@ func CorsMiddleware(options map[string]interface{}) gin.HandlerFunc {
 		MaxAge:                 time.Duration(c.MaxAge) * time.Second,
 		AllowWildcard:          c.AllowWildcard,
 		AllowBrowserExtensions: c.AllowBrowserExtensions,
+		CustomSchemas:          c.CustomSchemas,
 		AllowWebSockets:        c.AllowWebSockets,
 		AllowFiles:             false,
 	})

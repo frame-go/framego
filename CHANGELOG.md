@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2 - 2026-10-19
+
+- Add the `custom_schemas` option to the `cors` middleware for origins outside http and https, such as `tauri://localhost`
+
 ## 0.4.1 - 2026-10-03
 
 - Enable GORM error translation in the database client (`TranslateError`)
