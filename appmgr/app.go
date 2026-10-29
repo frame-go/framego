@@ -72,6 +72,7 @@ func (a *appImpl) Init() {
 		// if specified job in command line, only run this job
 		a.config.Jobs = []string{runJob}
 		a.config.Services = []ServiceConfig{}
+		a.config.Observable = ObservableConfig{}
 	}
 
 	a.clients, err = newClientManager(a.ctx, a.middlewares, &a.config.Clients)
@@ -127,7 +128,9 @@ func (a *appImpl) Init() {
 			return
 		}
 	}
-	a.observable = newObservable(a.ctx, a.middlewares, &a.config.Observable, a.services)
+	if a.config.Observable.Endpoints.Http != "" {
+		a.observable = newObservable(a.ctx, a.middlewares, &a.config.Observable, a.services)
+	}
 }
 
 func (a *appImpl) RegisterMiddleware(name string, middleware Middleware) {
@@ -215,11 +218,13 @@ func (a *appImpl) Run() (err error) {
 		}
 		log.Logger.Info().Str("service", name).Msg("service_started")
 	}
-	err = a.observable.Run()
-	if err != nil {
-		return
+	if a.observable != nil {
+		err = a.observable.Run()
+		if err != nil {
+			return
+		}
+		log.Logger.Info().Msg("observable_started")
 	}
-	log.Logger.Info().Msg("observable_started")
 
 	// Wait for interrupt signal to gracefully shut down the server with a timeout
 	quit := make(chan os.Signal, 1)
@@ -252,7 +257,9 @@ func (a *appImpl) Run() (err error) {
 	for _, service := range a.services {
 		service.Wait()
 	}
-	a.observable.Wait()
+	if a.observable != nil {
+		a.observable.Wait()
+	}
 	log.Logger.Warn().Msg("exit_with_all_services_stopped")
 	fmt.Println("[Exit] All Services Stopped.")
 	return

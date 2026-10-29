@@ -307,7 +307,7 @@ Below are configuration items under `app`.
 |--------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|---------------------------------------|
 | name                                 | Name of app                                                                                                                 | `iam`                                 |
 | observable                           | Built-in observable services for debug, monitoring, etc.                                                                    |                                       |
-| observable.endpoint.https            | HTTP endpoint for observable service.                                                                                       | `:8080`                               |
+| observable.endpoints.http            | HTTP endpoint for observable service.                                                                                       | `:8080`                               |
 | observable.modules                   | Enable built-in observable modules. <br>Details of available modules refer to below.                                        | `- pprof`                             |
 | services                             | List of application services.                                                                                               |                                       |
 | services[].name                      | Name of service                                                                                                             | `iam`                                 |
