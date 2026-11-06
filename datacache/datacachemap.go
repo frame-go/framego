@@ -1,10 +1,9 @@
 package datacache
 
 import (
+	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
-	"unsafe"
 
 	"github.com/frame-go/framego/copy"
 )
@@ -18,6 +17,7 @@ type LoadDataBatchByKeysCallback[K comparable, V any] func(keys []K) (map[K]V, e
 // CacheItem is basic unit of cache
 type CacheItem[V any] struct {
 	data           *V
+	loadErr        error // error of the latest load, kept only while data is not from a successful load
 	nextUpdateTime int64 // unix timestamp in nanoseconds
 	initCutOffTime int64 // unix timestamp in nanoseconds
 	muItemUpdate   sync.RWMutex
@@ -93,21 +93,28 @@ func (c *CacheMap[K, V]) updateData(key K, item *CacheItem[V]) {
 	var data V
 	var err error
 	data, err = c.loadData(key)
+	c.storeData(item, data, err, time.Now().UnixNano())
+}
+
+func (c *CacheMap[K, V]) storeData(item *CacheItem[V], data V, err error, now int64) {
+	item.muItemUpdate.Lock()
+	defer item.muItemUpdate.Unlock()
 	expire := c.expiration
 	if err != nil {
 		if c.expirationOnErr <= 0 {
+			if item.data == nil {
+				item.loadErr = err
+			}
 			return
 		}
 		expire = c.expirationOnErr
 	}
-	now := time.Now().UnixNano()
-	item.muItemUpdate.Lock()
-	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&item.data)), unsafe.Pointer(&data))
+	item.data = &data
+	item.loadErr = err
 	item.nextUpdateTime = now + expire
 	if now < item.initCutOffTime {
 		item.initCutOffTime = now
 	}
-	item.muItemUpdate.Unlock()
 }
 
 // GC
@@ -131,9 +138,43 @@ func (c *CacheMap[K, V]) evictKeys() {
 }
 
 // Get gets data by key from CacheMap
-// Return zero value if no valid data
+// Return zero value if no data is loaded yet, or the value the loader returned if the latest load failed with ExpirationOnErr set,
+// use GetWithError to tell these from data of a successful load
 // Note the returned data is reference, any modification in returned data will affect the subsequent returned data
 func (c *CacheMap[K, V]) Get(key K) V {
+	item := c.waitItem(key)
+
+	item.muItemUpdate.RLock()
+	defer item.muItemUpdate.RUnlock()
+	if item.data == nil {
+		var zeroValue V
+		return zeroValue
+	}
+	return *item.data
+}
+
+// GetWithError gets data by key from CacheMap, waiting for first data like Get
+// Return zero value and an error wrapping ErrNotLoaded if no load of the key has succeeded yet,
+// or if the latest load failed with ExpirationOnErr set; the error also wraps the load error if there is one
+// Note the returned data is reference, any modification in returned data will affect the subsequent returned data
+func (c *CacheMap[K, V]) GetWithError(key K) (V, error) {
+	item := c.waitItem(key)
+
+	item.muItemUpdate.RLock()
+	defer item.muItemUpdate.RUnlock()
+	var zeroValue V
+	if item.loadErr != nil {
+		return zeroValue, fmt.Errorf("%w: %w", ErrNotLoaded, item.loadErr)
+	}
+	if item.data == nil {
+		return zeroValue, errLoadInProgress
+	}
+	return *item.data, nil
+}
+
+// waitItem gets the item of key, starts a load if no data, data expired or retry needed,
+// and waits for first data until WaitTimeout
+func (c *CacheMap[K, V]) waitItem(key K) *CacheItem[V] {
 	now := time.Now().UnixNano()
 	var item *CacheItem[V]
 	ok := false
@@ -189,15 +230,7 @@ func (c *CacheMap[K, V]) Get(key K) V {
 
 	// Update data evict time, guarantee it uses biggest value of all goroutines.
 	c.updateEvictTime(item, now)
-
-	// This could be zero value if remote data is not available or error happens, or simply waitTimeout.
-	item.muItemUpdate.RLock()
-	defer item.muItemUpdate.RUnlock()
-	if item.data == nil {
-		var zeroValue V
-		return zeroValue
-	}
-	return *item.data
+	return item
 }
 
 // GetCopy gets deep copy of data by key from CacheMap
@@ -224,23 +257,12 @@ func (c *CacheMap[K, V]) updateBatch(unCachedDataMap map[K]*CacheItem[V], update
 	var data map[K]V
 	var err error
 	data, err = c.loadDataBatch(uncachedKeys)
-	expire := c.expiration
-	if err != nil {
-		if c.expirationOnErr <= 0 {
-			return
-		}
-		expire = c.expirationOnErr
-	}
 	now := time.Now().UnixNano()
 	for key, item := range unCachedDataMap {
-		itemData := data[key]
-		item.muItemUpdate.Lock()
-		atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&item.data)), unsafe.Pointer(&itemData))
-		item.nextUpdateTime = now + expire
-		if now < item.initCutOffTime {
-			item.initCutOffTime = now
-		}
-		item.muItemUpdate.Unlock()
+		c.storeData(item, data[key], err, now)
+	}
+	if err != nil && c.expirationOnErr <= 0 {
+		return
 	}
 	updatedStatus.muItemUpdate.Lock()
 	updatedStatus.initCutOffTime = now
@@ -248,7 +270,7 @@ func (c *CacheMap[K, V]) updateBatch(unCachedDataMap map[K]*CacheItem[V], update
 }
 
 // GetMany gets data by key from CacheMap
-// Return zero value if no valid data
+// Return zero value for a key if no data is loaded yet, or the value the loader returned if the latest load failed with ExpirationOnErr set
 // Note the returned data is reference, any modification in returned data will affect the subsequent returned data
 func (c *CacheMap[K, V]) GetMany(keys []K) map[K]V {
 	now := time.Now().UnixNano()
@@ -294,9 +316,13 @@ func (c *CacheMap[K, V]) GetMany(keys []K) map[K]V {
 				c.dataMap[uncachedKey] = item
 				hasNonExistKey = true
 				unCachedDataMap[uncachedKey] = item
-			} else if now > item.nextUpdateTime {
-				item.nextUpdateTime = now + c.retryInterval
-				unCachedDataMap[uncachedKey] = item
+			} else {
+				item.muItemUpdate.Lock()
+				if now > item.nextUpdateTime {
+					item.nextUpdateTime = now + c.retryInterval
+					unCachedDataMap[uncachedKey] = item
+				}
+				item.muItemUpdate.Unlock()
 			}
 		}
 		c.mu.Unlock()

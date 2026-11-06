@@ -3,6 +3,8 @@
 ## Unreleased
 
 - Start no observable service when `-j` runs a single job
+- Add `GetWithError` to `datacache.CacheMap` and `datacache.DataCache`, returning an error wrapping `datacache.ErrNotLoaded` when no valid data is loaded
+- Fix data races in `datacache.DataCache.Get` and `datacache.CacheMap.GetMany`
 
 ## 0.4.2 - 2026-10-19
 

@@ -1,11 +1,11 @@
 package datacache
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 	"sync"
-	"sync/atomic"
 	"time"
-	"unsafe"
 
 	"github.com/frame-go/framego/copy"
 )
@@ -16,6 +16,8 @@ type LoadDataCallback[T any] func() (T, error)
 // DataCache a thread/goroutine safe in memory cache storage.
 type DataCache[T any] struct {
 	data            *T
+	loaded          bool  // data holds init data or a stored load result
+	loadErr         error // error of the latest load, kept only while data is not from a successful load
 	loadData        LoadDataCallback[T]
 	expiration      int64 // in nanoseconds
 	expirationOnErr int64 // in nanoseconds
@@ -45,6 +47,11 @@ const (
 	DefaultRetryInterval int64 = 1000000000
 )
 
+// ErrNotLoaded is wrapped in the error GetWithError returns when it has no data from init data or a successful load to return
+var ErrNotLoaded = errors.New("datacache_not_loaded")
+
+var errLoadInProgress = fmt.Errorf("%w: load_in_progress", ErrNotLoaded)
+
 // NewDataCache create new DataCache with a CacheInitOption
 // The data updating is synchronized, the Get method will return old data while updating in progress
 // Only one go routine will try to load the data during one RetryInterval
@@ -67,15 +74,43 @@ func NewDataCache[T any](opt *CacheInitOption[T]) (c *DataCache[T]) {
 		c.waitTimeout = 0
 	}
 	if opt.WithInitData || !reflect.ValueOf(opt.InitData).IsZero() {
+		c.loaded = true
 		c.initCutOffTime = time.Now().UnixNano()
 	}
 	return
 }
 
 // Get data from DataCache
-// Return zero value if no valid data
+// Return zero value if no data is loaded yet, or the value the loader returned if the latest load failed with ExpirationOnErr set,
+// use GetWithError to tell these from data of a successful load
 // Note the returned data is reference, any modification in returned data will affect the subsequent returned data
 func (c *DataCache[T]) Get() T {
+	c.waitData()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return *c.data
+}
+
+// GetWithError gets data from DataCache, waiting for first data like Get
+// Return zero value and an error wrapping ErrNotLoaded if there is no init data and no load has succeeded yet,
+// or if the latest load failed with ExpirationOnErr set; the error also wraps the load error if there is one
+// Note the returned data is reference, any modification in returned data will affect the subsequent returned data
+func (c *DataCache[T]) GetWithError() (T, error) {
+	c.waitData()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	var zeroValue T
+	if c.loadErr != nil {
+		return zeroValue, fmt.Errorf("%w: %w", ErrNotLoaded, c.loadErr)
+	}
+	if !c.loaded {
+		return zeroValue, errLoadInProgress
+	}
+	return *c.data, nil
+}
+
+// waitData starts a load if data expired or retry needed, and waits for first data until WaitTimeout
+func (c *DataCache[T]) waitData() {
 	now := time.Now().UnixNano()
 	c.mu.RLock()
 	nextUpdateTime := c.nextUpdateTime
@@ -100,13 +135,20 @@ func (c *DataCache[T]) Get() T {
 				expire := c.expiration
 				if err != nil {
 					if c.expirationOnErr <= 0 {
+						c.mu.Lock()
+						if !c.loaded {
+							c.loadErr = err
+						}
+						c.mu.Unlock()
 						return
 					}
 					expire = c.expirationOnErr
 				}
 				now := time.Now().UnixNano()
 				c.mu.Lock()
-				atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&c.data)), unsafe.Pointer(&data))
+				c.data = &data
+				c.loaded = true
+				c.loadErr = err
 				c.nextUpdateTime = now + expire
 				if now < c.initCutOffTime {
 					c.initCutOffTime = now
@@ -126,8 +168,6 @@ func (c *DataCache[T]) Get() T {
 		time.Sleep(time.Millisecond)
 		now += MilliToNanoSecond
 	}
-
-	return *c.data
 }
 
 // GetCopy get deep copy of data from DataCache
