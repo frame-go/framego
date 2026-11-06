@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.3 - 2026-11-06
 
 - Start no observable service when `-j` runs a single job
 - Add `GetWithError` to `datacache.CacheMap` and `datacache.DataCache`, returning an error wrapping `datacache.ErrNotLoaded` when no valid data is loaded
